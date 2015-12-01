@@ -9,6 +9,7 @@ import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 
 import com.hasbrain.test.fragment.R;
+import com.hasbrain.test.fragment.fragment.FragmentState;
 import com.hasbrain.test.fragment.fragment.Step1Fragment;
 import com.hasbrain.test.fragment.fragment.Step2Fragment;
 import com.hasbrain.test.fragment.fragment.Step3Fragment;
@@ -20,17 +21,20 @@ import java.util.EnumSet;
 public class RegisterActivity extends AppCompatActivity implements FragmentCallback{
     //Fragment ID
     public static final int STEP1 = 0, STEP2 = 1, STEP3 = 2;
-    private static final String TITLE = "TITLE";
+    private static final String STATE = "FRAGMENT_STATE";
 
     Fragment step1Fragment, step2Fragment, step3Fragment;
-    UserInfo info;
+    static UserInfo info;
+    FragmentState fragmentState;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.register);
 
-        info = new UserInfo();
+        if (info == null)
+            info = new UserInfo();
+
 
         // Restore fragment by Tag
         if (savedInstanceState != null){
@@ -38,36 +42,25 @@ public class RegisterActivity extends AppCompatActivity implements FragmentCallb
             step2Fragment = getSupportFragmentManager().getFragment(savedInstanceState, "STEP2");
             step3Fragment = getSupportFragmentManager().getFragment(savedInstanceState, "STEP3");
 
-            setTitle(savedInstanceState.getString(TITLE));
-        }
-        else
-        if (step1Fragment == null) {
+            fragmentState = (FragmentState) savedInstanceState.getSerializable(STATE);
+            if (fragmentState != null)
+                setTitle(fragmentState.getName());
+
+        } else {
             step1Fragment = new Step1Fragment();
-            getSupportFragmentManager()
-                    .beginTransaction()
-                    .replace(R.id.fragment_container, step1Fragment)
-                    .commit();
-            setTitle("STEP 1");
+            switchFragment(step1Fragment, false);
+
+            fragmentState = FragmentState.STEP1;
+            setTitle(fragmentState.getName());
         }
     }
 
-
-    /**
-     * Switch to given fragment and add current commit state to back stack
-     * @param fragment fragment to show
-     */
-    private void switchFragment(Fragment fragment){
-        String backStateName = fragment.getClass().getName();
-
-        FragmentManager manager = getSupportFragmentManager();
-        boolean fragmentPopped = manager.popBackStackImmediate (backStateName, 0);
-
-        if (!fragmentPopped){ //fragment not in back stack, create it.
-            FragmentTransaction ft = manager.beginTransaction();
-            ft.replace(R.id.fragment_container, fragment);
-            ft.addToBackStack(backStateName);
-            ft.commit();
-        }
+    private void switchFragment(Fragment fragmentToShow, boolean saveThisState) {
+        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+        ft.replace(R.id.fragment_container, fragmentToShow);
+        if (saveThisState)
+            ft.addToBackStack(fragmentState.getName());
+        ft.commit();
     }
 
     @Override
@@ -84,8 +77,10 @@ public class RegisterActivity extends AppCompatActivity implements FragmentCallb
                 // show Step2 fragment
                 if (step2Fragment == null)
                     step2Fragment = new Step2Fragment();
-                switchFragment(step2Fragment);
-                setTitle("STEP 2");
+                switchFragment(step2Fragment, true);
+
+                fragmentState = FragmentState.STEP2;
+                setTitle(fragmentState.getName());
                 break;
 
             case STEP2:
@@ -96,23 +91,29 @@ public class RegisterActivity extends AppCompatActivity implements FragmentCallb
                 // show Step3 fragment
                 if (step3Fragment == null)
                     step3Fragment = new Step3Fragment();
-                switchFragment(step3Fragment);
-                setTitle("STEP 3");
+                switchFragment(step3Fragment, true);
+
+                fragmentState = FragmentState.STEP3;
+                setTitle(fragmentState.getName());
                 break;
 
             case STEP3:
                 if (extra != null){
-                    // Button reset click
-                    if (Step3Fragment.RESET.equals(extra.getString(Step3Fragment.BUTTON_EVENT))) {
+                    String buttonEvent = extra.getString(Step3Fragment.BUTTON_EVENT);
+                    if (Step3Fragment.RESET.equals(buttonEvent)) {
 
-                        if (step1Fragment == null)
-                            step1Fragment = new Step1Fragment();
-                        switchFragment(step1Fragment);
-                        ((Step1Fragment) step1Fragment).reset(); // Clear input form at Step1
-                        setTitle("STEP 1");
+                        Step1Fragment.requestResetInput = true;
+
+                        FragmentManager fm = getSupportFragmentManager();
+                        while (fm.popBackStackImmediate()) {
+                            //Pop all
+                        }
+
+                        fragmentState = FragmentState.STEP1;
+                        setTitle(fragmentState.getName());
                     } else
                     // Button Send mail click
-                    if (Step3Fragment.SEND_MAIL.equals(extra.getString(Step3Fragment.BUTTON_EVENT))) {
+                        if (Step3Fragment.SEND_MAIL.equals(buttonEvent)) {
                         Intent emailIntent = new Intent(Intent.ACTION_SENDTO, Uri.fromParts(
                                 "mailto", info.email, null));
                         emailIntent.putExtra(Intent.EXTRA_SUBJECT, "User's registration info");
@@ -142,7 +143,7 @@ public class RegisterActivity extends AppCompatActivity implements FragmentCallb
         if (step3Fragment != null && step3Fragment.isAdded())
             getSupportFragmentManager().putFragment(outState, "STEP3", step3Fragment);
 
-        outState.putString(TITLE, getTitle().toString());
+        outState.putSerializable(STATE, fragmentState);
     }
 
 

@@ -51,4 +51,14 @@ public class UserInfo {
         this.sports = sports;
         return this;
     }
+
+    @Override
+    public String toString() {
+        return firstName + "\n" +
+                lastName + "\n" +
+                email + "\n" +
+                phoneNumber + "\n" +
+                salary + "\n" +
+                sports;
+    }
 }
