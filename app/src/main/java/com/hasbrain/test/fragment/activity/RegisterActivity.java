@@ -18,13 +18,13 @@ import com.hasbrain.test.fragment.model.UserInfo;
 
 import java.util.EnumSet;
 
-public class RegisterActivity extends AppCompatActivity implements FragmentCallback{
+public class RegisterActivity extends AppCompatActivity implements FragmentCallback {
     //Fragment ID
     public static final int STEP1 = 0, STEP2 = 1, STEP3 = 2;
-    private static final String STATE = "FRAGMENT_STATE";
+    private static final String STATE = "FRAGMENT_STATE", INFO = "INFO";
 
     Fragment step1Fragment, step2Fragment, step3Fragment;
-    static UserInfo info;
+    UserInfo info;
     FragmentState fragmentState;
 
     @Override
@@ -32,12 +32,8 @@ public class RegisterActivity extends AppCompatActivity implements FragmentCallb
         super.onCreate(savedInstanceState);
         setContentView(R.layout.register);
 
-        if (info == null)
-            info = new UserInfo();
-
-
         // Restore fragment by Tag
-        if (savedInstanceState != null){
+        if (savedInstanceState != null) {
             step1Fragment = getSupportFragmentManager().getFragment(savedInstanceState, "STEP1");
             step2Fragment = getSupportFragmentManager().getFragment(savedInstanceState, "STEP2");
             step3Fragment = getSupportFragmentManager().getFragment(savedInstanceState, "STEP3");
@@ -46,7 +42,10 @@ public class RegisterActivity extends AppCompatActivity implements FragmentCallb
             if (fragmentState != null)
                 setTitle(fragmentState.getName());
 
+            info = UserInfo.fromArrayList(savedInstanceState.getStringArrayList(INFO));
         } else {
+            info = new UserInfo();
+
             step1Fragment = new Step1Fragment();
             switchFragment(step1Fragment, false);
 
@@ -57,26 +56,29 @@ public class RegisterActivity extends AppCompatActivity implements FragmentCallb
 
     private void switchFragment(Fragment fragmentToShow, boolean saveThisState) {
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-        ft.replace(R.id.fragment_container, fragmentToShow);
+        ft.replace(R.id.fragment_container, fragmentToShow, fragmentToShow.getClass().getName());
         if (saveThisState)
-            ft.addToBackStack(fragmentState.getName());
+            ft.addToBackStack(null);
         ft.commit();
     }
 
     @Override
     public void notifyEvent(int fragmentId, Bundle extra) {
-        switch(fragmentId){
+        switch (fragmentId) {
             case STEP1:
-                if (extra != null){
+                if (extra != null) {
                     info.setFirstName(extra.getString(Step1Fragment.FIRST_NAME))
                             .setLastName(extra.getString(Step1Fragment.LAST_NAME))
                             .setEmail(extra.getString(Step1Fragment.EMAIL))
                             .setPhoneNumber(extra.getString(Step1Fragment.PHONE))
-                            .setSex(extra.getInt(Step1Fragment.SEX) == Step1Fragment.MALE);
+                            .setSex(extra.getInt(Step1Fragment.SEX) == Step1Fragment.MALE)
+                            .setPathAvatar(extra.getString(Step1Fragment.PATH_AVATAR));
                 }
                 // show Step2 fragment
-                if (step2Fragment == null)
+                if (step2Fragment == null &&
+                        (step2Fragment = getSupportFragmentManager().findFragmentByTag(Step2Fragment.class.getName())) == null) {
                     step2Fragment = new Step2Fragment();
+                }
                 switchFragment(step2Fragment, true);
 
                 fragmentState = FragmentState.STEP2;
@@ -84,13 +86,15 @@ public class RegisterActivity extends AppCompatActivity implements FragmentCallb
                 break;
 
             case STEP2:
-                if (extra != null){
+                if (extra != null) {
                     info.setSalary(extra.getInt(Step2Fragment.SALARY))
                             .setSports((EnumSet<UserInfo.Sports>) extra.getSerializable(Step2Fragment.SPORTS));
                 }
                 // show Step3 fragment
-                if (step3Fragment == null)
+                if (step3Fragment == null &&
+                        (step3Fragment = getSupportFragmentManager().findFragmentByTag(Step3Fragment.class.getName())) == null) {
                     step3Fragment = new Step3Fragment();
+                }
                 switchFragment(step3Fragment, true);
 
                 fragmentState = FragmentState.STEP3;
@@ -98,7 +102,7 @@ public class RegisterActivity extends AppCompatActivity implements FragmentCallb
                 break;
 
             case STEP3:
-                if (extra != null){
+                if (extra != null) {
                     String buttonEvent = extra.getString(Step3Fragment.BUTTON_EVENT);
                     if (Step3Fragment.RESET.equals(buttonEvent)) {
 
@@ -112,26 +116,28 @@ public class RegisterActivity extends AppCompatActivity implements FragmentCallb
                         fragmentState = FragmentState.STEP1;
                         setTitle(fragmentState.getName());
                     } else
-                    // Button Send mail click
+                        // Button Send mail click
                         if (Step3Fragment.SEND_MAIL.equals(buttonEvent)) {
-                        Intent emailIntent = new Intent(Intent.ACTION_SENDTO, Uri.fromParts(
-                                "mailto", info.email, null));
-                        emailIntent.putExtra(Intent.EXTRA_SUBJECT, "User's registration info");
+                            Intent emailIntent = new Intent(Intent.ACTION_SENDTO, Uri.fromParts(
+                                    "mailto", info.email, null));
+                            emailIntent.putExtra(Intent.EXTRA_SUBJECT, "User's registration info");
 
-                        String content = info.firstName + "_" + info.lastName + "\n";
-                        content += info.phoneNumber + "\n";
-                        content += info.salary + " dollars";
+                            String content = info.firstName + "_" + info.lastName + "\n";
+                            content += info.phoneNumber + "\n";
+                            content += info.salary + " dollars";
 
-                        emailIntent.putExtra(Intent.EXTRA_TEXT, content);
-                        startActivity(Intent.createChooser(emailIntent, "Send email..."));
-                    }
+                            emailIntent.putExtra(Intent.EXTRA_TEXT, content);
+                            emailIntent.putExtra(Intent.EXTRA_STREAM, Uri.parse("file://" + info.pathAvatar));
+
+                            startActivity(Intent.createChooser(emailIntent, "Send email..."));
+                        }
                 }
                 break;
         }
     }
 
     /**
-     *  save instance state of fragment
+     * save instance state of fragment
      */
     @Override
     protected void onSaveInstanceState(Bundle outState) {
@@ -144,6 +150,7 @@ public class RegisterActivity extends AppCompatActivity implements FragmentCallb
             getSupportFragmentManager().putFragment(outState, "STEP3", step3Fragment);
 
         outState.putSerializable(STATE, fragmentState);
+        outState.putStringArrayList(INFO, info.toArrayList());
     }
 
 

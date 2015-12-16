@@ -10,30 +10,45 @@
     android:orientation="vertical">
 
     <LinearLayout
-        android:id="@+id/ll_name"
-        android:layout_width="fill_parent"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal">
 
-        <EditText
-            android:id="@+id/ed_fname"
-            android:layout_width="0.0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1.0"
-            android:hint="First Name"
-            android:inputType="textCapWords"
-            android:singleLine="true"
-            android:nextFocusDown="@+id/ed_lname"/>
+        <android.support.v7.widget.AppCompatImageView
+            android:id="@+id/ivAvatar"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:src="@drawable/user"
+            android:scaleType="fitXY" />
 
-        <EditText
-            android:id="@+id/ed_lname"
-            android:layout_width="0.0dp"
+        <LinearLayout
+            android:id="@+id/ll_name"
+            android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1.0"
-            android:hint="Last Name"
-            android:inputType="textCapWords"
-            android:singleLine="true" />
+            android:paddingLeft="10dp"
+            android:orientation="vertical">
+
+            <EditText
+                android:id="@+id/ed_fname"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1.0"
+                android:hint="First Name"
+                android:inputType="textCapWords"
+                android:singleLine="true"
+                android:nextFocusDown="@+id/ed_lname" />
+
+            <EditText
+                android:id="@+id/ed_lname"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1.0"
+                android:hint="Last Name"
+                android:inputType="textCapWords"
+                android:singleLine="true" />
+        </LinearLayout>
     </LinearLayout>
+
 
     <EditText
         android:id="@+id/ed_email"
