@@ -1,12 +1,14 @@
 package com.hasbrain.test.fragment.activity;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
+import android.view.MotionEvent;
 
 import com.hasbrain.test.fragment.R;
 import com.hasbrain.test.fragment.fragment.FragmentState;
@@ -14,9 +16,11 @@ import com.hasbrain.test.fragment.fragment.Step1Fragment;
 import com.hasbrain.test.fragment.fragment.Step2Fragment;
 import com.hasbrain.test.fragment.fragment.Step3Fragment;
 import com.hasbrain.test.fragment.model.FragmentCallback;
+import com.hasbrain.test.fragment.model.SnowEffect;
 import com.hasbrain.test.fragment.model.UserInfo;
 
 import java.util.EnumSet;
+import java.util.Random;
 
 public class RegisterActivity extends AppCompatActivity implements FragmentCallback {
     //Fragment ID
@@ -56,10 +60,17 @@ public class RegisterActivity extends AppCompatActivity implements FragmentCallb
 
     private void switchFragment(Fragment fragmentToShow, boolean saveThisState) {
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+        ft.setCustomAnimations(R.anim.slide_up, R.anim.fade_out, R.anim.fade_in, R.anim.slide_down);
         ft.replace(R.id.fragment_container, fragmentToShow, fragmentToShow.getClass().getName());
         if (saveThisState)
             ft.addToBackStack(null);
         ft.commit();
+        ((SnowEffect) findViewById(R.id.snowEffect)).setSnowColor(randomColor());
+    }
+
+    private int randomColor() {
+        Random random = new Random();
+        return Color.rgb(random.nextInt(256), random.nextInt(256), random.nextInt(256));
     }
 
     @Override
@@ -134,6 +145,18 @@ public class RegisterActivity extends AppCompatActivity implements FragmentCallb
                 }
                 break;
         }
+    }
+
+    @Override
+    public void onBackPressed() {
+        ((SnowEffect) findViewById(R.id.snowEffect)).setSnowColor(randomColor());
+        super.onBackPressed();
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        ((SnowEffect) findViewById(R.id.snowEffect)).passGesture(event);
+        return super.onTouchEvent(event);
     }
 
     /**
